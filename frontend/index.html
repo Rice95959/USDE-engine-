@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>USDE v7.6 — Clarity Engine</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--m:'JetBrains Mono',monospace}
+body{background:#020617;color:#e2e8f0;font-family:'Instrument Sans',-apple-system,system-ui,sans-serif;min-height:100vh}
+@keyframes spin{to{transform:rotate(360deg)}}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-track{background:#020617}::-webkit-scrollbar-thumb{background:#0f172a;border-radius:2px}
+textarea::placeholder{color:#111827}button:hover:not(:disabled){filter:brightness(1.12)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState} = React;
+
+const ST={sound:{c:"#22c55e",l:"Sound"},fragile:{c:"#eab308",l:"Fragile"},compromised:{c:"#ef4444",l:"Compromised"},narrative:{c:"#60a5fa",l:"Narrative"},interaction_stable:{c:"#a78bfa",l:"Interaction Stable"}};
+const RC={"mechanistically supported":"#22c55e","weak mechanism":"#eab308","non-physical explanation":"#ef4444","authority without evidence":"#f97316","structurally invalid":"#dc2626","narratively coherent":"#60a5fa","internally consistent":"#22c55e","socially functional":"#a78bfa"};
+const EC={strong:"#22c55e",moderate:"#eab308",weak:"#f97316"};
+const MC={empirical:"#22c55e",narrative:"#60a5fa",mixed:"#eab308",social_sequence:"#a78bfa"};
+const MR={preemptive_stabilizer:"#60a5fa",permission_builder:"#a78bfa",controlled_violation:"#f59e0b",sequence_repair:"#22c55e",self_lowering:"#818cf8",status_inversion:"#f97316",false_completeness:"#ef4444"};
+const CS={clean:"#22c55e",contested:"#eab308",novelty_preserved:"#06b6d4"};
+
+function G({score}){const c=score>=75?"#22c55e":score>=45?"#eab308":"#ef4444",r=27,ci=2*Math.PI*r;return(<div style={{position:"relative",width:68,height:68}}><svg viewBox="0 0 68 68" width="68" height="68"><circle cx="34" cy="34" r={r} fill="none" stroke="#0f172a" strokeWidth="4.5"/><circle cx="34" cy="34" r={r} fill="none" stroke={c} strokeWidth="4.5" strokeDasharray={`${(Math.min(100,Math.max(0,score))/100)*ci} ${ci}`} transform="rotate(-90 34 34)" strokeLinecap="round" style={{transition:"stroke-dasharray 0.8s"}}/></svg><div style={{position:"absolute",top:"50%",left:"50%",transform:"translate(-50%,-50%)"}}><div style={{fontSize:18,fontWeight:800,color:c,fontFamily:"var(--m)"}}>{score}</div></div></div>)}
+
+function Ch({data,color,border}){if(!data||!data.chain?.length||data.label==="None")return null;return(<div style={{background:"#060a12",borderRadius:8,padding:"11px 13px",border:`1px solid ${border}20`,flex:1,minWidth:0}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:7}}><span style={{fontSize:9,fontWeight:700,color,textTransform:"uppercase",letterSpacing:1}}>{data.label}</span>{data.evidence_strength&&<span style={{fontSize:7.5,padding:"1px 5px",borderRadius:3,background:(EC[data.evidence_strength]||"#475569")+"18",color:EC[data.evidence_strength]||"#475569",fontWeight:600}}>{data.evidence_type}·{data.evidence_strength}</span>}</div><div style={{display:"flex",alignItems:"center",gap:0,flexWrap:"wrap",lineHeight:2}}>{data.chain.map((s,i)=>(<span key={i} style={{display:"inline-flex",alignItems:"center"}}><span style={{fontSize:10.5,padding:"2px 7px",borderRadius:4,color:s.includes("???")?"#ef4444":"#d1d5db",fontWeight:s.includes("???")? 700:400,background:s.includes("???")?"#ef444412":color+"08",border:`1px solid ${s.includes("???")?"#ef444425":color+"12"}`}}>{s}</span>{i<data.chain.length-1&&<span style={{color:"#1e293b",margin:"0 3px",fontSize:9}}>→</span>}</span>))}</div>{data.failure_point&&data.failure_point!=="N/A"&&<div style={{marginTop:7,fontSize:10,color:"#f87171",lineHeight:1.5}}>✕ {data.failure_point}</div>}</div>)}
+
+function Fo({label,open,toggle,children,badge,color}){return(<div style={{marginBottom:8}}><div onClick={toggle} style={{cursor:"pointer",display:"flex",alignItems:"center",gap:5,padding:"4px 0",userSelect:"none"}}><span style={{fontSize:7,color:color||"#334155",transform:open?"rotate(90deg)":"",transition:"transform 0.15s",display:"inline-block"}}>▶</span><span style={{fontSize:8.5,color:color||"#475569",textTransform:"uppercase",letterSpacing:1.5,fontWeight:700}}>{label}</span>{badge!=null&&<span style={{fontSize:8,color:"#334155",fontFamily:"var(--m)"}}>{badge}</span>}</div>{open&&<div style={{paddingTop:6}}>{children}</div>}</div>)}
+
+function T({children,color}){return <span style={{fontSize:7.5,padding:"1px 5px",borderRadius:3,background:color+"15",color,fontWeight:600,letterSpacing:0.3}}>{children}</span>}
+
+function UBar({label,value,color}){return(<div style={{marginBottom:5}}><div style={{display:"flex",justifyContent:"space-between",fontSize:8.5,marginBottom:2}}><span style={{color:"#4b5563"}}>{label}</span><span style={{color,fontFamily:"var(--m)",fontSize:8}}>{(value||0).toFixed(2)}</span></div><div style={{height:3,background:"#0f172a",borderRadius:2,overflow:"hidden"}}><div style={{width:`${Math.min(100,(value||0)*100)}%`,height:"100%",background:color,borderRadius:2,transition:"width 0.5s"}}/></div></div>)}
+
+function Pnl({children,border,bg}){return <div style={{background:bg||"#060a12",borderRadius:8,padding:"10px 13px",border:`1px solid ${border||"#111827"}`,marginBottom:12}}>{children}</div>}
+function Hdr({children,color}){return <div style={{fontSize:8.5,color:color||"#475569",textTransform:"uppercase",letterSpacing:1.5,fontWeight:700,marginBottom:5}}>{children}</div>}
+
+const EX={
+"Obsidian Heights":"Engineer Miller argues slab micro-fractures were caused by high-frequency vibrational resonance from the 4th Street Light Rail bypassing standard damping layers. Contractor Wilkes countered the failure was due to lack of site-wide intentional focus and negative energy accumulation in the curing zone. Independent lab analysis found unwashed river sand in the aggregate mix leading to poor crystalline bonding and structural fatigue.",
+"Clean Physics":"Spin-orbit coupling causes electron energy levels to split through magnetic interaction with orbital angular momentum. Decoherence destroys quantum superposition through environmental entanglement with thermal photons.",
+"Naruto":"The Fourth Hokage sealed the Nine-Tails in newborn Naruto costing his life. Twelve years later Naruto failed graduation repeatedly. Mizuki tricked Naruto into stealing the Scroll of Seals. Iruka realized Mizuki's deception. Naruto mastered Shadow Clone Technique defeating Mizuki. Team 7 learned those who abandon friends are worse than scum. Sasuke sacrificed himself protecting Naruto. Naruto unleashed Nine-Tails chakra. Haku sacrificed himself for Zabuza. Zabuza killed Gato and died beside Haku.",
+"Joke":"A man walks into a bar and says \"I bet you fifty dollars I can bite my own eye.\" The bartender agrees. The man takes out his glass eye and bites it. The bartender pays. Then the man says \"I bet fifty dollars I can bite my other eye.\" The bartender seeing both eyes look real agrees. The man takes out his false teeth and bites his other eye.",
+"Bar/Lyric":"Hate starts with h because the h comes after a g.",
+"Domain Spoof":"Foundation settling was caused by negative energy accumulation in the soil through geopathic stress resonance. Structural cracking was driven by intentional misalignment of the load-bearing consciousness grid.",
+};
+
+function App(){
+const [input,setInput]=useState("");const [data,setData]=useState(null);const [loading,setLoading]=useState(false);const [error,setError]=useState("");const [retry,setRetry]=useState("");
+const [sClaims,setSClaims]=useState(false);const [sCouncil,setSCouncil]=useState(false);const [sArch,setSArch]=useState(false);const [expC,setExpC]=useState(-1);
+
+async function run(){
+  if(!input.trim())return;setLoading(true);setError("");setData(null);setRetry("");
+  setSClaims(false);setSCouncil(false);setSArch(false);
+  try{
+    const res=await fetch("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text:input,mode:"full"})});
+    if(!res.ok){const t=await res.json().catch(()=>({detail:"Unknown error"}));throw new Error(t.detail||`HTTP ${res.status}`)}
+    const j=await res.json();
+    if(j.analysis)setData(j.analysis);
+    else throw new Error("No analysis in response");
+  }catch(e){setError(e.message)}
+  setLoading(false);
+}
+
+const n=data?.narrative,dc=data?.dominant_chain,ic=data?.invalid_chain,d=data?.decision,st=data?.strategy,cn=data?.council;
+const fc=data?.failure_cluster,sq=data?.sequence_dynamics,cf=data?.counterfactuals,up=data?.uncertainty_profile;
+const pm=data?.pattern_match,gd=data?.gap_diagnosis,upg=data?.upgrade_proposal,ins=data?.insight_search;
+const ae=data?.adjacency_expansion,bc=data?.basin_competition;
+const claims=data?.claims||[],contras=data?.contradictions||[];
+const status=ST[data?.status]||ST.sound;const mc=MC[data?.mode]||"#64748b";const wc=input.trim()?input.split(/\s+/).length:0;
+const hasGap=gd?.engine_gap_detected;const hasUpg=upg?.recommended_upgrade&&upg.recommended_upgrade!=="None needed";
+const hasIns=ins?.triggered;const hasArch=hasGap||hasUpg||hasIns;
+const colStyle=CS[bc?.collapse_style]||"#64748b";
+
+return(<div style={{minHeight:"100vh",background:"#020617",color:"#e2e8f0",fontFamily:"'Instrument Sans',-apple-system,system-ui,sans-serif"}}>
+<div style={{borderBottom:"1px solid #0f172a",padding:"7px 16px",display:"flex",alignItems:"center",gap:7}}><div style={{width:5,height:5,borderRadius:"50%",background:"#22c55e",boxShadow:"0 0 4px #22c55e40"}}/><span style={{fontFamily:"var(--m)",fontWeight:700,fontSize:11,letterSpacing:1.5,color:"#475569"}}>USDE v7.6</span><span style={{fontSize:9,color:"#1e293b"}}>Clarity Engine · Mistral</span></div>
+<div style={{display:"flex",height:"calc(100vh - 35px)"}}>
+<div style={{width:320,borderRight:"1px solid #0f172a",display:"flex",flexDirection:"column",flexShrink:0}}>
+<div style={{padding:"7px 10px",borderBottom:"1px solid #0f172a",display:"flex",gap:3,flexWrap:"wrap"}}>{Object.keys(EX).map(k=>(<button key={k} onClick={()=>{setInput(EX[k]);setData(null);setError("")}} style={{fontSize:8,padding:"2px 6px",borderRadius:3,border:"1px solid #111827",background:"transparent",color:"#374151",cursor:"pointer",fontFamily:"inherit"}}>{k}</button>))}</div>
+<textarea value={input} onChange={e=>setInput(e.target.value)} placeholder="Paste text to analyze..." style={{flex:1,padding:12,background:"transparent",border:"none",color:"#9ca3af",fontSize:11.5,lineHeight:1.8,resize:"none",outline:"none",fontFamily:"inherit"}}/>
+<div style={{padding:"6px 8px",borderTop:"1px solid #0f172a"}}>{wc>0&&<div style={{fontSize:8,color:wc>3000?"#eab308":"#1e293b",marginBottom:3,fontFamily:"var(--m)"}}>{wc}w{wc>3000?" truncated":""}</div>}
+<button onClick={run} disabled={loading||!input.trim()} style={{width:"100%",padding:"8px 0",borderRadius:5,border:"none",background:loading?"#0f172a":"#1d4ed8",color:"#e2e8f0",fontSize:11,fontWeight:600,cursor:loading?"default":"pointer",fontFamily:"inherit"}}>{loading?"Analyzing...":"Analyze"}</button>
+{error&&<div style={{fontSize:8,color:"#ef4444",marginTop:4,padding:"4px 6px",background:"#450a0a15",borderRadius:3,wordBreak:"break-all"}}>{error}</div>}</div></div>
+
+<div style={{flex:1,overflow:"auto",padding:"14px 20px"}}>
+{!data&&!loading&&<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",color:"#0f172a",fontSize:12}}>Paste text and analyze</div>}
+{loading&&<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%"}}><div style={{textAlign:"center"}}><div style={{width:20,height:20,border:"2px solid #0f172a",borderTopColor:"#1d4ed8",borderRadius:"50%",animation:"spin 0.7s linear infinite",margin:"0 auto 8px"}}/><div style={{fontSize:10,color:"#334155"}}>Analyzing via Mistral...</div></div></div>}
+{data&&(<div style={{maxWidth:640,margin:"0 auto"}}>
+
+{/* DECISION LINE */}
+<div style={{display:"flex",gap:12,alignItems:"center",marginBottom:14}}><G score={data.trust_score||0}/><div style={{flex:1,minWidth:0}}><div style={{display:"flex",alignItems:"center",gap:5,marginBottom:3,flexWrap:"wrap"}}><span style={{fontSize:10,fontWeight:700,color:status.c,textTransform:"uppercase",letterSpacing:1}}>{status.l}</span>{data.mode&&<T color={mc}>{data.mode.replace(/_/g," ")}</T>}{d&&<span style={{fontSize:9.5,padding:"2px 8px",borderRadius:4,background:"#1d4ed812",border:"1px solid #1d4ed818",color:"#93c5fd",fontWeight:600}}>{d.action}</span>}{bc?.collapse_style&&<T color={colStyle}>{bc.collapse_style.replace(/_/g," ")}</T>}</div>{n&&<div style={{fontSize:12,color:"#cbd5e1",lineHeight:1.6}}>{n.resolution}</div>}</div></div>
+
+{/* FAILURE CLUSTER */}
+{fc&&fc.cluster_type!=="none"&&fc.core_issue&&!fc.core_issue.toLowerCase().includes("no structural")&&(<Pnl border="#ef444418" bg="#0f0a12"><div style={{display:"flex",alignItems:"center",gap:6,marginBottom:5}}><Hdr color="#ef4444">Core Issue</Hdr><T color="#ef4444">{fc.cluster_type?.replace(/_/g," ")}</T></div><div style={{fontSize:11.5,color:"#fca5a5",lineHeight:1.55,marginBottom:5}}>{fc.core_issue}</div>{fc.adjacent_signals?.length>0&&<div style={{display:"flex",gap:4,flexWrap:"wrap"}}>{fc.adjacent_signals.map((s,i)=><span key={i} style={{fontSize:8.5,padding:"2px 6px",borderRadius:3,background:"#1e293b",color:"#94a3b8"}}>{s}</span>)}</div>}</Pnl>)}
+
+{/* NARRATIVE */}
+{n&&(<Pnl>{[["Situation",n.situation,"#64748b"],["Conflict",n.conflict,"#eab308"],["Resolution",n.resolution,"#22c55e"]].map(([l,t,c])=>t?<div key={l} style={{fontSize:11,color:l==="Resolution"?"#d1d5db":"#94a3b8",lineHeight:1.65,marginBottom:5}}><span style={{color:c,fontWeight:600}}>{l}: </span>{t}</div>:null)}</Pnl>)}
+
+{/* CHAINS */}
+{(dc?.chain?.length>0||(ic?.chain?.length>0&&ic?.label!=="None"))&&(<div style={{display:"flex",gap:8,marginBottom:12}}><Ch data={dc} color="#22c55e" border="#22c55e"/>{ic&&ic.label!=="None"&&<Ch data={ic} color="#ef4444" border="#ef4444"/>}</div>)}
+
+{/* BASIN COMPETITION */}
+{bc&&bc.basin_count>1&&(<Pnl border={colStyle+"20"} bg="#060a14"><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><Hdr color="#06b6d4">Basin Competition</Hdr><T color={colStyle}>{bc.collapse_style?.replace(/_/g," ")}</T></div>{bc.top_basins?.map((b,i)=>(<div key={i} style={{display:"flex",gap:8,alignItems:"center",marginBottom:5}}><span style={{fontSize:10,fontFamily:"var(--m)",fontWeight:700,color:i===0?"#22d3ee":"#475569",width:28,textAlign:"right"}}>{b.score?.toFixed(2)}</span><div style={{flex:1}}><div style={{fontSize:10.5,color:i===0?"#e0f2fe":"#94a3b8",fontWeight:i===0?600:400}}>{b.label}</div><div style={{fontSize:9,color:"#64748b"}}>{b.why_it_competes}</div></div></div>))}</Pnl>)}
+
+{/* COUNTERFACTUAL */}
+{cf&&cf.dominant_survival!=null&&(<Pnl border="#f59e0b15"><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><Hdr color="#f59e0b">Counterfactual Test</Hdr><span style={{fontSize:9,fontFamily:"var(--m)",color:cf.dominant_survival>0.7?"#22c55e":cf.dominant_survival>0.5?"#eab308":"#ef4444",fontWeight:700}}>survival: {cf.dominant_survival?.toFixed(2)}</span></div>{cf.strongest_alternative?.label&&<div style={{fontSize:10.5,color:"#d1d5db",lineHeight:1.5,marginBottom:4}}><span style={{color:"#f59e0b",fontWeight:600}}>Rival: </span>{cf.strongest_alternative.label}{cf.strongest_alternative.why_it_almost_wins&&<span style={{color:"#94a3b8"}}> — {cf.strongest_alternative.why_it_almost_wins}</span>}</div>}{cf.fragility_reason&&cf.fragility_reason!=="Robust"&&<div style={{fontSize:10,color:"#fbbf24"}}>Fragility: {cf.fragility_reason}</div>}</Pnl>)}
+
+{/* UNCERTAINTY */}
+{up&&(<Pnl><Hdr>Uncertainty</Hdr><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 12px"}}><UBar label="Evidence" value={up.evidence} color="#60a5fa"/><UBar label="Mechanism" value={up.mechanism} color="#22c55e"/><UBar label="Sequence" value={up.sequence} color="#a78bfa"/><UBar label="Downstream" value={up.downstream} color="#f59e0b"/></div></Pnl>)}
+
+{/* STEPS */}
+{d?.concrete_steps?.length>0&&(<Pnl><Hdr>Next Steps</Hdr>{d.concrete_steps.map((s,i)=>(<div key={i} style={{display:"flex",gap:7,alignItems:"flex-start",marginBottom:3}}><span style={{fontSize:8.5,color:"#3b82f6",fontFamily:"var(--m)",fontWeight:700,marginTop:2}}>{i+1}</span><span style={{fontSize:11,color:"#d1d5db",lineHeight:1.5}}>{s}</span></div>))}{d.what_to_ignore&&<div style={{marginTop:5,fontSize:10,color:"#64748b",fontStyle:"italic"}}>Ignore: {d.what_to_ignore}</div>}</Pnl>)}
+
+{/* CONTRADICTIONS */}
+{contras.length>0&&(<Pnl><Hdr>Contradictions</Hdr>{contras.map((c,i)=>(<div key={i} style={{display:"flex",alignItems:"center",gap:5,marginBottom:4,fontSize:10.5}}><span style={{color:"#d1d5db",flex:1}}>{c.a}</span><span style={{color:"#ef4444",fontSize:8,fontWeight:700}}>✕</span><span style={{color:"#d1d5db",flex:1}}>{c.b}</span></div>))}</Pnl>)}
+
+{/* STRATEGY */}
+{st&&(<Pnl><div style={{display:"flex",gap:5}}>{["stoic","opportunistic","conservative"].map(name=>(<div key={name} style={{flex:1,textAlign:"center",padding:"3px 0"}}><div style={{fontSize:7,color:"#1e293b",textTransform:"uppercase",letterSpacing:1}}>{name}</div><div style={{fontSize:9.5,color:st[name]===st.consensus?"#93c5fd":"#4b5563",fontWeight:st[name]===st.consensus?700:400}}>{(st[name]||"—").replace(/_/g," ")}</div></div>))}</div>{st.horizon_note&&<div style={{fontSize:9.5,color:"#475569",textAlign:"center",marginTop:3}}>{st.horizon_note}</div>}</Pnl>)}
+
+{/* CLAIMS */}
+<Fo label="Claims" badge={claims.length} open={sClaims} toggle={()=>setSClaims(!sClaims)}>{claims.map((c,i)=>{const rc=RC[c.risk]||"#64748b";return(<div key={i} onClick={()=>setExpC(expC===i?-1:i)} style={{background:"#060a12",borderRadius:6,padding:"8px 11px",cursor:"pointer",border:"1px solid #0a0f1a",marginBottom:4}}><div style={{display:"flex",gap:8,alignItems:"flex-start"}}><div style={{width:5,height:5,borderRadius:"50%",background:rc,marginTop:5,flexShrink:0}}/><div style={{flex:1,minWidth:0}}><div style={{fontSize:11,color:"#c9cdd3",lineHeight:1.5}}>{c.text}</div><div style={{display:"flex",gap:4,marginTop:3,flexWrap:"wrap"}}><T color={rc}>{c.risk}</T>{c.evidence&&<T color="#475569">{c.evidence}</T>}</div></div><span style={{fontSize:9.5,fontFamily:"var(--m)",color:rc,fontWeight:700}}>{(c.impact||0).toFixed(2)}</span></div>{expC===i&&c.hypotheses?.length>0&&<div style={{marginTop:7,paddingTop:7,borderTop:"1px solid #111827"}}>{c.hypotheses.map((h,j)=>(<div key={j} style={{display:"flex",alignItems:"center",gap:6,marginBottom:3}}><div style={{width:Math.max(3,(h.confidence||0)*55),height:9,borderRadius:2,background:j===0?"#3b82f6":"#1e293b"}}/><span style={{fontSize:9,color:"#64748b"}}>{(h.frame||"").replace(/_/g," ")}</span></div>))}</div>}</div>)})}</Fo>
+
+{/* COUNCIL */}
+<Fo label="Council" open={sCouncil} toggle={()=>setSCouncil(!sCouncil)}>{cn&&(<div style={{display:"flex",gap:12,alignItems:"center",background:"#060a12",borderRadius:6,padding:"9px 11px"}}><div style={{flex:1}}>{[["Stoic",cn.stoic_v,"#f87171"],["Graceful",cn.graceful_v,"#60a5fa"]].map(([l,v,c])=>(<div key={l} style={{marginBottom:5}}><div style={{display:"flex",justifyContent:"space-between",fontSize:9,marginBottom:2}}><span style={{color:"#4b5563"}}>{l}</span><span style={{color:c,fontFamily:"var(--m)",fontSize:8}}>{(v||0).toFixed(3)}</span></div><div style={{height:3,background:"#0f172a",borderRadius:2,overflow:"hidden"}}><div style={{width:`${Math.min(100,(v||0)*100)}%`,height:"100%",background:c,borderRadius:2}}/></div></div>))}</div><div style={{textAlign:"center",minWidth:55}}><div style={{fontSize:15,fontWeight:800,fontFamily:"var(--m)",color:cn.agreement==="unanimous"?"#22c55e":"#eab308"}}>{(cn.variance||0).toFixed(3)}</div><div style={{fontSize:7.5,color:cn.agreement==="unanimous"?"#22c55e":"#eab308",fontWeight:700,textTransform:"uppercase"}}>{cn.agreement}</div></div></div>)}</Fo>
+
+</div>)}</div></div></div>)}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
